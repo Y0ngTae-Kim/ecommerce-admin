@@ -1,4 +1,6 @@
-import NextAuth from "next-auth";
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+import NextAuth, { getServerSession } from "next-auth";
 // import AppleProvider from "next-auth/providers/apple";
 // import FacebookProvider from "next-auth/providers/facebook";
 import GoogleProvider from "next-auth/providers/google";
@@ -7,26 +9,39 @@ import GoogleProvider from "next-auth/providers/google";
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "@/lib/mongodb";
 
-export default NextAuth({
+const adminEmails = ['ista1024@gmail.com'];
+
+export const authOptions = {
+  secret: process.env.SECRET,
   providers: [
-    // OAuth authentication providers...
-    // AppleProvider({
-    //   clientId: process.env.APPLE_ID,
-    //   clientSecret: process.env.APPLE_SECRET,
-    // }),
-    // FacebookProvider({
-    //   clientId: process.env.FACEBOOK_ID,
-    //   clientSecret: process.env.FACEBOOK_SECRET,
-    // }),
     GoogleProvider({
       clientId: "" && process.env.GOOGLE_ID,
       clientSecret: "" && process.env.GOOGLE_SECRET,
     }),
-    // Passwordless / email sign in
-    // EmailProvider({
-    //   server: process.env.MAIL_SERVER,
-    //   from: "NextAuth.js <no-reply@example.com>",
-    // }),
   ],
   adapter: MongoDBAdapter(clientPromise),
-});
+  callbacks: {
+    session: ({ session, token, user }: any) => {
+      if (adminEmails?.includes(session?.user?.email)) {
+        return session;
+      } else {
+        return false;
+      }
+    },
+  },
+};
+
+export default NextAuth(authOptions);
+
+/**
+ * handle isAdminRequest
+ * req, res is HTTP functions and parameters.
+ */
+export async function isAdminRequest(req: NextApiRequest, res: NextApiResponse) {
+  const session = await getServerSession(req, res, authOptions);
+  if (!adminEmails?.includes(session?.user?.email)) {
+    res.status(401);
+    res.end();
+    throw 'not an admin';
+  }
+}
