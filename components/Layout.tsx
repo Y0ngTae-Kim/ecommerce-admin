@@ -3,7 +3,7 @@ import Nav from "@/components/Nav";
 import { useState } from "react";
 import Logo from "@/components/Logo";
 
-type LayoutProps = { children: JSX.Element }
+type LayoutProps = { children: React.ReactElement | React.ReactElement[] }
 
 export default function Layout({ children }: LayoutProps) {
   const [showNav, setShowNav] = useState(false);
